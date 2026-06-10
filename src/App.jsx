@@ -25,6 +25,9 @@ export const App = () => {
 
       <TaskForm onAddTask={addTask} />
 
+      {/* Передаем наш стейт с задачами в компонент списка */}
+      
+
       <p className={styles.counter}>
         Всего задач создано: {tasks.length}
       </p>

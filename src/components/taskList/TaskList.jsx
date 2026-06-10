@@ -1,9 +1,11 @@
 import styles from './taskList.module.css'
 
 export const TaskList = () => {
+  // Если список пуст, возвращаем дружелюбный текст
+
   return (
-    <div className={styles.list}>
-      TaskList
-    </div>
+    <ul className={styles.list}>
+
+    </ul>
   )
 }
