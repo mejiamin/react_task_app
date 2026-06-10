@@ -1,170 +1,110 @@
-# Урок 1: Создание задач и инициализация проекта
+## Урок 2: Отображение списка задач
 
-Отличный план! Проект **Task Manager (Менеджер задач)** — это идеальная классика для того, чтобы набить руку. Мы разберем всё пошагово, построим правильную архитектуру, настроим React + Vite и изолируем стили с помощью CSS Modules.
+В этом уроке мы научим приложение рендерить динамические списки с помощью метода `map()` и разберем, зачем React так сильно нужны `key`. Нам понадобятся два компонента: `TaskList` (контейнер для списка) и `TaskItem` (карточка отдельной задачи).
 
-Начнем с самого фундамента.
+### Шаг 1: Создаем карточку задачи (`TaskItem`)
 
----
+Этот компонент отвечает за внешний вид одной конкретной задачи.
 
-## Что мы сделаем в этом уроке
-
-* Настроим структуру проекта.
-* Создадим компонент формы добавления задачи.
-* Научимся работать с состоянием через `useState`.
-* Реализуем создание новых задач.
-* Подготовим базу для дальнейшего развития приложения.
-
----
-
-# Шаг 1: Структура проекта
-
-Предположим, что проект на Vite уже создан и запущен.
-
-Чтобы код оставался чистым и масштабируемым, сразу разобьем приложение на отдельные компоненты.
-
-Создай следующую структуру внутри папки `src`:
-
-```plaintext
-src/
-├── components/
-│   ├── TaskForm/
-│   │   ├── TaskForm.jsx
-│   │   └── TaskForm.module.css
-│   ├── TaskList/
-│   │   ├── TaskList.jsx
-│   │   └── TaskList.module.css
-│   └── TaskItem/
-│       ├── TaskItem.jsx
-│       └── TaskItem.module.css
-├── App.jsx
-├── App.module.css
-└── main.jsx
-```
-
----
-
-# Шаг 2: Структура данных задачи
-
-Каждая задача будет храниться в виде объекта:
-
-```js
-{
-  id: 1712345678901,
-  title: "Изучить React",
-  isCompleted: false
-}
-```
-
-Описание полей:
-
-| Поле        | Тип     | Описание                 |
-| ----------- | ------- | ------------------------ |
-| id          | number  | Уникальный идентификатор |
-| title       | string  | Текст задачи             |
-| isCompleted | boolean | Статус выполнения        |
-
-Для генерации ID будем использовать:
-
-```js
-Date.now()
-```
-
----
-
-# Шаг 3: Создаем форму добавления задач
-
-## Файл: `src/components/TaskForm/TaskForm.jsx`
+В файл `src/components/TaskItem/TaskItem.jsx` добавь код:
 
 ```jsx
-import { useState } from 'react';
-import styles from './TaskForm.module.css';
+import styles from './TaskItem.module.css';
 
-export default function TaskForm({ onAddTask }) {
-  const [text, setText] = useState('');
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    // Проверяем, что строка не пустая
-    if (!text.trim()) return;
-
-    // Передаем задачу родителю
-    onAddTask(text);
-
-    // Очищаем поле ввода
-    setText('');
-  };
-
+export default function TaskItem({ task }) {
   return (
-    <form className={styles.form} onSubmit={handleSubmit}>
-      <input
-        type="text"
-        className={styles.input}
-        placeholder="Что нужно сделать?"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-      />
-
-      <button type="submit" className={styles.button}>
-        Добавить
-      </button>
-    </form>
+    <li className={styles.item}>
+      <span className={styles.text}>{task.title}</span>
+      {/* Сюда в будущих уроках мы добавим кнопки для удаления и редактирования */}
+    </li>
   );
 }
+
 ```
 
----
-
-## Файл: `src/components/TaskForm/TaskForm.module.css`
+И стили для него в `src/components/TaskItem/TaskItem.module.css`:
 
 ```css
-.form {
+.item {
   display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.input {
-  flex: 1;
-  padding: 10px 15px;
-  font-size: 16px;
-  border: 1px solid #ccc;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background-color: #fff;
+  border: 1px solid #eee;
   border-radius: 6px;
-  outline: none;
-  transition: border-color 0.2s;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
-.input:focus {
-  border-color: #007bff;
-}
-
-.button {
-  padding: 10px 20px;
+.text {
   font-size: 16px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+  color: #333;
 }
 
-.button:hover {
-  background-color: #0056b3;
-}
 ```
 
 ---
 
-# Шаг 4: Создаем главный компонент приложения
+### Шаг 2: Создаем список задач (`TaskList`)
 
-Теперь свяжем все части приложения.
+Здесь мы берем массив `tasks` из пропсов и превращаем его в массив JSX-элементов. Если задач нет, мы покажем красивую заглушку, чтобы интерфейс не выглядел пустым.
 
-## Файл: `src/App.jsx`
+> ⚠️ **Важно:** Когда мы перебираем массив в React через `.map()`, у самого верхнего тега внутри цикла **обязательно должен быть пропс `key**` с уникальным значением (в нашем случае `task.id`). Это нужно React, чтобы быстро понимать, какой именно элемент изменился, удалился или добавился, не перерисовывая весь список целиком.
+
+В файл `src/components/TaskList/TaskList.jsx`:
+
+```jsx
+import TaskItem from '../TaskItem/TaskItem';
+import styles from './TaskList.module.css';
+
+export default function TaskList({ tasks }) {
+  // Если список пуст, возвращаем дружелюбный текст
+  if (tasks.length === 0) {
+    return <p className={styles.empty}>Список задач пуст. Добавьте что-нибудь!</p>;
+  }
+
+  return (
+    <ul className={styles.list}>
+      {tasks.map((task) => (
+        <TaskItem key={task.id} task={task} />
+      ))}
+    </ul>
+  );
+}
+
+```
+
+И стили для списка в `src/components/TaskList/TaskList.module.css`:
+
+```css
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+}
+
+.empty {
+  text-align: center;
+  color: #888;
+  font-style: italic;
+  margin: 30px 0;
+}
+
+```
+
+---
+
+### Шаг 3: Подключаем список в `App.jsx`
+
+Теперь возвращаемся в главный файл, импортируем `TaskList` и заменяем им временный счетчик или ставим сразу после формы.
+
+Обнови свой `src/App.jsx` следующим образом:
 
 ```jsx
 import { useState } from 'react';
 import TaskForm from './components/TaskForm/TaskForm';
+import TaskList from './components/TaskList/TaskList'; // Импортируем список
 import styles from './App.module.css';
 
 export default function App() {
@@ -173,143 +113,34 @@ export default function App() {
   const addTask = (title) => {
     const newTask = {
       id: Date.now(),
-      title,
+      title: title,
       isCompleted: false,
     };
-
     setTasks((prevTasks) => [...prevTasks, newTask]);
   };
-
-  console.log('Текущие задачи:', tasks);
 
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>Менеджер задач</h1>
-
       <TaskForm onAddTask={addTask} />
-
-      <p className={styles.counter}>
-        Всего задач создано: {tasks.length}
-      </p>
+      
+      {/* Передаем наш стейт с задачами в компонент списка */}
+      <TaskList tasks={tasks} />
+      
+      <p className={styles.counter}>Всего задач: {tasks.length}</p>
     </div>
   );
 }
+
 ```
 
 ---
 
-## Файл: `src/App.module.css`
+### 🎯 Домашнее задание к Уроку 2:
 
-```css
-.container {
-  max-width: 600px;
-  margin: 50px auto;
-  padding: 20px;
-  font-family: Arial, sans-serif;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
+1. Посмотри в браузер — изначально ты должен увидеть надпись *"Список задач пуст. Добавьте что-нибудь!"*.
+2. Вбей задачу в форму и нажми Enter. Она должна мгновенно появиться на экране в виде стильной карточки.
+3. Добавь 3-4 задачи подряд, чтобы проверить, как они выстраиваются в аккуратный список.
+4. Открой консоль браузера (F12 -> Console) и убедись, что там нет красных ошибок вроде *"Each child in a list should have a unique 'key' prop"*.
 
-.title {
-  text-align: center;
-  color: #333;
-  margin-bottom: 30px;
-}
-
-.counter {
-  font-size: 14px;
-  color: #666;
-  text-align: right;
-}
-```
-
----
-
-# Как это работает
-
-1. Пользователь вводит текст задачи.
-2. React сохраняет значение в состоянии `text`.
-3. При отправке формы вызывается `handleSubmit`.
-4. Если строка пустая — ничего не происходит.
-5. Если строка заполнена — вызывается `onAddTask`.
-6. В `App.jsx` создается новый объект задачи.
-7. Массив `tasks` обновляется через `setTasks`.
-8. Поле ввода очищается.
-
----
-
-# Домашнее задание
-
-### 1. Запусти проект
-
-```bash
-npm run dev
-```
-
----
-
-### 2. Открой DevTools
-
-В браузере:
-
-* F12
-* вкладка **Console**
-
----
-
-### 3. Проверь создание задач
-
-Попробуй добавить несколько задач:
-
-* Изучить React
-* Сделать домашнее задание
-* Прочитать документацию Vite
-
-После каждого добавления в консоли должен появляться обновленный массив задач.
-
-Пример:
-
-```js
-[
-  {
-    id: 1712345678901,
-    title: "Изучить React",
-    isCompleted: false
-  }
-]
-```
-
----
-
-### 4. Проверь очистку поля
-
-После добавления задачи поле ввода должно автоматически очищаться.
-
----
-
-### 5. Проверь защиту от пустого ввода
-
-Попробуй:
-
-* отправить пустую строку;
-* ввести только пробелы.
-
-Новая задача создаваться не должна.
-
----
-
-# Итог урока
-
-После завершения урока ты научишься:
-
-* создавать React-компоненты;
-* работать с `useState`;
-* использовать контролируемые формы;
-* передавать данные через props;
-* обновлять массивы в состоянии без мутаций;
-* подключать CSS Modules.
-
----
-
-➡️ После выполнения домашнего задания можно переходить к **Уроку 2: Отображение списка задач на экране**.
+**Мы перейдем к Уроку 3: Редактирование задач (включим режим редактирования)!**
