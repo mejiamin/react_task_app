@@ -1,6 +1,4 @@
-import {
-  TaskForm,
-} from "@/components";
+import { TaskForm, TaskList } from "@/components";
 import styles from './app.module.css';
 import { useState } from "react";
 
@@ -17,7 +15,6 @@ export const App = () => {
     setTasks((prevTasks) => [...prevTasks, newTask]);
   };
 
-  console.log('Текущие задачи:', tasks);
 
   return (
     <div className={styles.container}>
@@ -26,7 +23,7 @@ export const App = () => {
       <TaskForm onAddTask={addTask} />
 
       {/* Передаем наш стейт с задачами в компонент списка */}
-      
+      <TaskList tasks={tasks} />
 
       <p className={styles.counter}>
         Всего задач создано: {tasks.length}
