@@ -15,6 +15,8 @@ export const App = () => {
     setTasks((prevTasks) => [...prevTasks, newTask]);
   };
 
+  // Новая функция для обновления текста задачи
+  
 
   return (
     <div className={styles.container}>
@@ -22,7 +24,7 @@ export const App = () => {
 
       <TaskForm onAddTask={addTask} />
 
-      {/* Передаем наш стейт с задачами в компонент списка */}
+      {/* Передаем функцию обновления дальше в список */}
       <TaskList tasks={tasks} />
 
       <p className={styles.counter}>
