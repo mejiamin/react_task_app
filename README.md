@@ -167,7 +167,8 @@ export default function TaskItem({ task, onUpdateTask, onDeleteTask }) {
             <button className={styles.editButton} onClick={handleEdit}>
               Редактировать
             </button>
-            <button className={styles.deleteButton} onClick={() => onDeleteTask(task.id)}>
+            <button className={styles.deleteButton}
+              onClick={() => onDeleteTask(task.id)}>
               Удалить
             </button>
           </div>
