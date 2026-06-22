@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import styles from './taskItem.module.css'
 
-export const TaskItem = ({ task, onUpdateTask }) => {
+export const TaskItem = ({ task, onUpdateTask, onDeleteTask }) => {
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(task.title)
 
@@ -45,7 +45,7 @@ export const TaskItem = ({ task, onUpdateTask }) => {
             <button className={styles.editButton} onClick={handleEdit}>
               Редактировать
             </button>
-            <button className={styles.deleteButton}>
+            <button className={styles.deleteButton} onClick={() => onDeleteTask(task.id)}>
               Удалить
             </button>
           </div>

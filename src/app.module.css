@@ -19,3 +19,30 @@
   color: #666;
   text-align: right;
 }
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 15px;
+  font-dash-size: 14px;
+}
+
+.label {
+  color: #555;
+  margin-right: 8px;
+}
+
+.select {
+  padding: 6px 10px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+  outline: none;
+  cursor: pointer;
+}
+
+.select:focus {
+  border-color: #007bff;
+}

@@ -12,23 +12,33 @@
 - Урок 2: Отображение списка задач
 - Урок 3: Редактирование задач
 - Урок 4: Сохранение и отмена изменений при редактировании
-- **Урок 5: Удаление задач при редактировании**
-- Урок 6: Сортировка задач через выпадающее меню
+- Урок 5: Удаление задач при редактировании
+- **Урок 6: Сортировка задач через выпадающее меню**
 - Урок 7: Переключение между светлой и тёмной темой
 
 ---
 
-## Урок 5: Удаление задач
+## Урок 6: Сортировка задач через выпадающее меню
 
-По традиции React, так как массив всех задач (`tasks`) хранится в самом верху — в файле `App.jsx`, функция удаления тоже должна родиться там, а затем спуститься через `TaskList` в каждую карточку `TaskItem`.
+В этом уроке мы добавим возможность сортировать задачи. Мы сделаем выпадающий список (`<select>`), который позволит пользователю выбирать один из двух режимов:
 
-Для удаления мы будем использовать метод массивов `.filter()`. Он идеально подходит, так как возвращает новый массив, исключая из него элемент с нужным нам `id` (помни про иммутабельность стейта!).
+1. **По порядку (сначала старые)** — как они были добавлены.
+2. **По алфавиту (А–Я)** — сортировка строк от А до Я.
+
+### Важная концепция: Производное состояние (Computed State)
+
+Вместо того чтобы при сортировке физически перезаписывать и менять сам массив `tasks` в стейте, мы применим более правильный и чистый подход в React. Мы будем хранить в стейте только **критерий сортировки** (строку `'default'` или `'alphabetical'`), а сам отсортированный массив будем вычислять «на лету» прямо во время рендеринга. Таким образом, исходные данные никогда не испортятся и не перепутаются.
 
 ---
 
-### Шаг 1: Создаем функцию удаления в `App.jsx`
+### Шаг 1: Добавляем стейт для типа сортировки в `App.jsx`
 
-Открой файл `src/App.jsx` и добавь функцию `deleteTask`, а также передай её вниз в компонент `TaskList`.
+Нам нужно:
+
+1. Создать состояние `sortBy`.
+2. Написать логику, которая перед передачей массива в `TaskList` будет делать его копию и сортировать её в зависимости от значения `sortBy`.
+
+Обнови файл `src/App.jsx`:
 
 ```jsx
 import { useState } from 'react';
@@ -38,6 +48,8 @@ import styles from './App.module.css';
 
 export default function App() {
   const [tasks, setTasks] = useState([]);
+  // Стейт для хранения текущего режима сортировки
+  const [sortBy, setSortBy] = useState('default');
 
   const addTask = (title) => {
     const newTask = {
@@ -56,19 +68,52 @@ export default function App() {
     );
   };
 
-  // Новая функция для удаления задачи по её id
   const deleteTask = (id) => {
     setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
   };
 
+  // Вычисляемое (производное) состояние сортировки
+  const getSortedTasks = () => {
+    // Делаем копию массива через спред-оператор, 
+    // так как .sort() мутирует массив
+    const tasksCopy = [...tasks];
+
+    if (sortBy === 'alphabetical') {
+      // Сортировка по алфавиту без учета регистра букв
+      return tasksCopy.sort((a, b) => a.title.localeCompare(b.title));
+    }
+
+    // Если 'default', возвращаем массив 
+    // в обычном порядке (по ID/времени создания)
+    return tasksCopy;
+  };
+
+  const sortedTasks = getSortedTasks();
+
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>Менеджер задач</h1>
-      <TaskForm onAddTask={addTask} />
       
-      {/* Пробрасываем onDeleteTask дальше */}
+      <TaskForm onAddTask={addTask} />
+
+      {/* Панель управления сортировкой */}
+      <div className={styles.controls}>
+        <label htmlFor="sort-select" className={styles.label}>
+          Сортировка: </label>
+        <select
+          id="sort-select"
+          className={styles.select}
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+        >
+          <option value="default">По порядку добавления</option>
+          <option value="alphabetical">По алфавиту (А–Я)</option>
+        </select>
+      </div>
+      
+      {/* Передаем уже отсортированный массив вместо исходного tasks */}
       <TaskList 
-        tasks={tasks} 
+        tasks={sortedTasks} 
         onUpdateTask={updateTask} 
         onDeleteTask={deleteTask} 
       />
@@ -81,129 +126,38 @@ export default function App() {
 
 ---
 
-### Шаг 2: Транзит через `TaskList.jsx`
+### Шаг 2: Добавляем стили для выпадающего списка
 
-Принимаем пропс `onDeleteTask` в списке и отдаем его каждому элементу.
+Чтобы селект встал красиво между формой и списком задач, добавим немного CSS.
 
-Обнови `src/components/TaskList/TaskList.jsx`:
-
-```jsx
-import TaskItem from '../TaskItem/TaskItem';
-import styles from './TaskList.module.css';
-
-export default function TaskList({ tasks, onUpdateTask, onDeleteTask }) {
-  if (tasks.length === 0) {
-    return <p className={styles.empty}>Список задач пуст. Добавьте что-нибудь!</p>;
-  }
-
-  return (
-    <ul className={styles.list}>
-      {tasks.map((task) => (
-        <TaskItem 
-          key={task.id} 
-          task={task} 
-          onUpdateTask={onUpdateTask}
-          onDeleteTask={onDeleteTask} // Передаем в карточку
-        />
-      ))}
-    </ul>
-  );
-}
-```
-
----
-
-### Шаг 3: Добавляем кнопку удаления в `TaskItem.jsx`
-
-Мы разместим кнопку «Удалить» в режиме обычного просмотра, рядом с кнопкой «Редактировать». При нажатии на неё будет срабатывать `onDeleteTask(task.id)`.
-
-Обнови блок обычного просмотра (после двоеточия в тернарном операторе) в `src/components/TaskItem/TaskItem.jsx`:
-
-```jsx
-import { useState } from 'react';
-import styles from './TaskItem.module.css';
-
-export default function TaskItem({ task, onUpdateTask, onDeleteTask }) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(task.title);
-
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
-
-  const handleSave = () => {
-    if (!editValue.trim()) return;
-    onUpdateTask(task.id, editValue);
-    setIsEditing(false);
-  };
-
-  const handleCancel = () => {
-    setEditValue(task.title);
-    setIsEditing(false);
-  };
-
-  return (
-    <li className={styles.item}>
-      {isEditing ? (
-        <div className={styles.editContainer}>
-          <input
-            type="text"
-            className={styles.input}
-            value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
-          />
-          <button className={styles.saveButton} onClick={handleSave}>
-            Сохранить
-          </button>
-          <button className={styles.cancelButton} onClick={handleCancel}>
-            Отмена
-          </button>
-        </div>
-      ) : (
-        <>
-          <span className={styles.text}>{task.title}</span>
-          {/* Контейнер для кнопок, чтобы они аккуратно стояли вместе */}
-          <div className={styles.buttonsContainer}>
-            <button className={styles.editButton} onClick={handleEdit}>
-              Редактировать
-            </button>
-            <button className={styles.deleteButton}
-              onClick={() => onDeleteTask(task.id)}>
-              Удалить
-            </button>
-          </div>
-        </>
-      )}
-    </li>
-  );
-}
-```
-
----
-
-### Шаг 4: Стилизуем кнопку удаления
-
-Сделаем кнопку «Удалить» классического красного (опасного) цвета. Добавь эти стили в `src/components/TaskItem/TaskItem.module.css`:
+Допиши в конец файла `src/App.module.css` следующие стили:
 
 ```css
-.buttonsContainer {
+.controls {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 15px;
+  font-dash-size: 14px;
 }
 
-.deleteButton {
-  padding: 6px 12px;
+.label {
+  color: #555;
+  margin-right: 8px;
+}
+
+.select {
+  padding: 6px 10px;
   font-size: 14px;
-  border: none;
+  border: 1px solid #ccc;
   border-radius: 4px;
+  background-color: #fff;
+  outline: none;
   cursor: pointer;
-  background-color: #dc3545;
-  color: #fff;
-  transition: background-color 0.2s;
 }
 
-.deleteButton:hover {
-  background-color: #bd2130;
+.select:focus {
+  border-color: #007bff;
 }
 ```
 
@@ -227,10 +181,11 @@ npm run dev
 
 ---
 
-### 🎯 Домашнее задание к Уроку 5:
+### 🎯 Домашнее задание к Уроку 6:
 
-1. Создай пару тест-задач.
-2. Нажми кнопку **«Удалить»** у любой из них. Задача должна мгновенно и бесследно исчезнуть со страницы.
-3. Обрати внимание, как меняется счетчик задач внизу экрана (`Всего задач: X`) — он должен автоматически уменьшаться, так как React сам пересчитывает длину обновленного массива `tasks.length`.
+1. Добавь три задачи вразнобой, например: *"Яблоки"*, *"Бананы"*, *"Груши"*. Они должны отобразиться именно в таком порядке.
+2. Переключи выпадающий список в положение **«По алфавиту (А–Я)»**. Список должен мгновенно перестроиться: *"Бананы"*, *"Груши"*, *"Яблоки"*.
+3. Попробуй добавить новую задачу (например, *"Арбуз"*), находясь в режиме алфавитной сортировки. Она должна автоматически встать на первое место в списке.
+4. Переключи обратно на **«По порядку добавления»** — первоначальный порядок должен восстановиться.
 
-**Мы перейдем к Уроку 6: научимся сортировать задачи с помощью выпадающего списка (например, по алфавиту и по времени добавления)!**
+**Мы перейдем к финальному Уроку 7: сделаем переключение светлой и тёмной темы!**
