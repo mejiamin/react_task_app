@@ -3,7 +3,7 @@ import styles from './taskList.module.css'
 
 export const TaskList = ({ tasks, onUpdateTask }) => {
   if (tasks.length === 0) {
-    return <p>Список задач пуст. Добавьте что-нибудь!</p>
+    return <p className={styles.empty}>Список задач пуст. Добавьте что-нибудь!</p>
   }
 
   return (
