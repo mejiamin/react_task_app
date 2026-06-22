@@ -4,6 +4,8 @@ import { useState } from "react";
 
 export const App = () => {
   const [tasks, setTasks] = useState([]);
+  // Стейт для хранения текущего режима сортировки
+  
 
   const addTask = (title) => {
     const newTask = {
@@ -28,7 +30,7 @@ export const App = () => {
   }
 
   // Вычисляемое (производное) состояние сортировки
-  
+
 
   return (
     <div className={styles.container}>
