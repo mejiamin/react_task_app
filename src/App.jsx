@@ -15,7 +15,15 @@ export const App = () => {
     setTasks((prevTasks) => [...prevTasks, newTask]);
   };
 
-  // Новая функция для обновления текста задачи
+  const updateTask = (id, newTitle) => {
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task.id === id ? { ...task, title: newTitle } : task
+      )
+    );
+  };
+
+  // Новая функция для удаления задачи по её id
   
 
   return (
@@ -24,8 +32,11 @@ export const App = () => {
 
       <TaskForm onAddTask={addTask} />
 
-      {/* Передаем функцию обновления дальше в список */}
-      <TaskList tasks={tasks} />
+      {/* Пробрасываем onDeleteTask дальше */}
+      <TaskList
+        tasks={tasks}
+        onUpdateTask={updateTask}
+      />
 
       <p className={styles.counter}>
         Всего задач создано: {tasks.length}

@@ -11,22 +11,24 @@
 - Урок 1: Создание задач
 - Урок 2: Отображение списка задач
 - Урок 3: Редактирование задач
-- **Урок 4: Сохранение и отмена изменений при редактировании**
-- Урок 5: Удаление задач при редактировании
+- Урок 4: Сохранение и отмена изменений при редактировании
+- **Урок 5: Удаление задач при редактировании**
 - Урок 6: Сортировка задач через выпадающее меню
 - Урок 7: Переключение между светлой и тёмной темой
 
 ---
 
-## Урок 4: Сохранение и отмена изменений при редактировании
+## Урок 5: Удаление задач
 
-В этом уроке мы научимся передавать данные обратно «снизу вверх» (от дочернего компонента к родительскому) и добавим очень важную для пользователя фичу — кнопку **«Отмена»**, если он передумал редактировать.
+По традиции React, так как массив всех задач (`tasks`) хранится в самом верху — в файле `App.jsx`, функция удаления тоже должна родиться там, а затем спуститься через `TaskList` в каждую карточку `TaskItem`.
 
-### Шаг 1: Добавляем функцию обновления в `App.jsx`
+Для удаления мы будем использовать метод массивов `.filter()`. Он идеально подходит, так как возвращает новый массив, исключая из него элемент с нужным нам `id` (помни про иммутабельность стейта!).
 
-Нам нужно создать функцию `updateTask`, которая будет принимать `id` измененной задачи и её `newTitle`, находить её в массиве и обновлять.
+---
 
-Обнови файл `src/App.jsx`, добавив функцию и передав её в `TaskList`:
+### Шаг 1: Создаем функцию удаления в `App.jsx`
+
+Открой файл `src/App.jsx` и добавь функцию `deleteTask`, а также передай её вниз в компонент `TaskList`.
 
 ```jsx
 import { useState } from 'react';
@@ -46,7 +48,6 @@ export default function App() {
     setTasks((prevTasks) => [...prevTasks, newTask]);
   };
 
-  // Новая функция для обновления текста задачи
   const updateTask = (id, newTitle) => {
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
@@ -55,13 +56,22 @@ export default function App() {
     );
   };
 
+  // Новая функция для удаления задачи по её id
+  const deleteTask = (id) => {
+    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
+  };
+
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>Менеджер задач</h1>
       <TaskForm onAddTask={addTask} />
       
-      {/* Передаем функцию обновления дальше в список */}
-      <TaskList tasks={tasks} onUpdateTask={updateTask} />
+      {/* Пробрасываем onDeleteTask дальше */}
+      <TaskList 
+        tasks={tasks} 
+        onUpdateTask={updateTask} 
+        onDeleteTask={deleteTask} 
+      />
       
       <p className={styles.counter}>Всего задач: {tasks.length}</p>
     </div>
@@ -71,9 +81,9 @@ export default function App() {
 
 ---
 
-### Шаг 2: Пробрасываем функцию через `TaskList.jsx`
+### Шаг 2: Транзит через `TaskList.jsx`
 
-Компонент `TaskList` сам по себе не редактирует задачи, он просто мост (транзит) между `App` и `TaskItem`. Примем пропс `onUpdateTask` и спустим его в каждый `TaskItem`.
+Принимаем пропс `onDeleteTask` в списке и отдаем его каждому элементу.
 
 Обнови `src/components/TaskList/TaskList.jsx`:
 
@@ -81,7 +91,7 @@ export default function App() {
 import TaskItem from '../TaskItem/TaskItem';
 import styles from './TaskList.module.css';
 
-export default function TaskList({ tasks, onUpdateTask }) {
+export default function TaskList({ tasks, onUpdateTask, onDeleteTask }) {
   if (tasks.length === 0) {
     return <p className={styles.empty}>Список задач пуст. Добавьте что-нибудь!</p>;
   }
@@ -92,7 +102,8 @@ export default function TaskList({ tasks, onUpdateTask }) {
         <TaskItem 
           key={task.id} 
           task={task} 
-          onUpdateTask={onUpdateTask} // Передаем в каждый элемент списка
+          onUpdateTask={onUpdateTask}
+          onDeleteTask={onDeleteTask} // Передаем в карточку
         />
       ))}
     </ul>
@@ -102,20 +113,17 @@ export default function TaskList({ tasks, onUpdateTask }) {
 
 ---
 
-### Шаг 3: Реализуем Сохранение и Отмену в `TaskItem.jsx`
+### Шаг 3: Добавляем кнопку удаления в `TaskItem.jsx`
 
-Теперь связываем всё воедино.
+Мы разместим кнопку «Удалить» в режиме обычного просмотра, рядом с кнопкой «Редактировать». При нажатии на неё будет срабатывать `onDeleteTask(task.id)`.
 
-* При **Сохранении** мы будем вызывать `onUpdateTask(task.id, editValue)`.
-* При **Отмене** мы должны вернуть текст инпута к первоначальному (`task.title`) и закрыть режим редактирования, чтобы изменения не применились.
-
-Замени код в `src/components/TaskItem/TaskItem.jsx`:
+Обнови блок обычного просмотра (после двоеточия в тернарном операторе) в `src/components/TaskItem/TaskItem.jsx`:
 
 ```jsx
 import { useState } from 'react';
 import styles from './TaskItem.module.css';
 
-export default function TaskItem({ task, onUpdateTask }) {
+export default function TaskItem({ task, onUpdateTask, onDeleteTask }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(task.title);
 
@@ -125,15 +133,11 @@ export default function TaskItem({ task, onUpdateTask }) {
 
   const handleSave = () => {
     if (!editValue.trim()) return;
-    
-    // Вызываем функцию из родительского компонента
     onUpdateTask(task.id, editValue);
     setIsEditing(false);
   };
 
-  // Функция отмены изменений
   const handleCancel = () => {
-    // Сбрасываем инпут на исходный текст задачи
     setEditValue(task.title);
     setIsEditing(false);
   };
@@ -158,9 +162,16 @@ export default function TaskItem({ task, onUpdateTask }) {
       ) : (
         <>
           <span className={styles.text}>{task.title}</span>
-          <button className={styles.editButton} onClick={handleEdit}>
-            Редактировать
-          </button>
+          {/* Контейнер для кнопок, чтобы они аккуратно стояли вместе */}
+          <div className={styles.buttonsContainer}>
+            <button className={styles.editButton} onClick={handleEdit}>
+              Редактировать
+            </button>
+            <button className={styles.deleteButton}
+              onClick={() => onDeleteTask(task.id)}>
+              Удалить
+            </button>
+          </div>
         </>
       )}
     </li>
@@ -170,25 +181,29 @@ export default function TaskItem({ task, onUpdateTask }) {
 
 ---
 
-### Шаг 4: Стили для кнопки Отмена
+### Шаг 4: Стилизуем кнопку удаления
 
-Добавим стили для серой кнопки «Отмена» в `src/components/TaskItem/TaskItem.module.css`:
+Сделаем кнопку «Удалить» классического красного (опасного) цвета. Добавь эти стили в `src/components/TaskItem/TaskItem.module.css`:
 
 ```css
-/* Добавь к существующим стилям кнопок */
-.cancelButton {
+.buttonsContainer {
+  display: flex;
+  gap: 8px;
+}
+
+.deleteButton {
   padding: 6px 12px;
   font-size: 14px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  background-color: #6c757d;
+  background-color: #dc3545;
   color: #fff;
   transition: background-color 0.2s;
 }
 
-.cancelButton:hover {
-  background-color: #5a6268;
+.deleteButton:hover {
+  background-color: #bd2130;
 }
 ```
 
@@ -212,10 +227,10 @@ npm run dev
 
 ---
 
-### 🎯 Домашнее задание к Уроку 4:
+### 🎯 Домашнее задание к Уроку 5:
 
-1. Создай задачу (например, *"Купить молоко"*).
-2. Нажми «Редактировать», измени текст на *"Купить молоко и хлеб"*, нажми «Сохранить». Убедись, что текст на экране обновился и остался измененным.
-3. Снова нажми «Редактировать», сотри всё или напиши случайный текст, но нажми **«Отмена»**. Поле должно закрыться, а задача — вернуть свой прежний вид (*"Купить молоко и хлеб"*).
+1. Создай пару тест-задач.
+2. Нажми кнопку **«Удалить»** у любой из них. Задача должна мгновенно и бесследно исчезнуть со страницы.
+3. Обрати внимание, как меняется счетчик задач внизу экрана (`Всего задач: X`) — он должен автоматически уменьшаться, так как React сам пересчитывает длину обновленного массива `tasks.length`.
 
-**Перейти к Уроку 5: Удаление задач!**
+**Мы перейдем к Уроку 6: научимся сортировать задачи с помощью выпадающего списка (например, по алфавиту и по времени добавления)!**
