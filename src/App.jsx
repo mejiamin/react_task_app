@@ -40,7 +40,7 @@ export const App = () => {
   
 
   return (
-    <div className={containerClass}>
+    <div className={styles.container}>
       <header className={styles.header}>
         <h1 className={styles.title}>Менеджер задач</h1>
 
