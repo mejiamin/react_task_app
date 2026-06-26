@@ -4,16 +4,15 @@ import { useState } from "react";
 
 export const App = () => {
   const [tasks, setTasks] = useState([]);
-  // Стейт для хранения текущего режима сортировки
+  // Состояние для хранения выбранного типа сортировки
   
 
   const addTask = (title) => {
     const newTask = {
       id: Date.now(),
-      title,
+      title: title,
       isCompleted: false,
     };
-
     setTasks((prevTasks) => [...prevTasks, newTask]);
   };
 
@@ -27,38 +26,37 @@ export const App = () => {
 
   const deleteTask = (id) => {
     setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
-  }
+  };
 
-  // Вычисляемое (производное) состояние сортировки
+  // ФУНКЦИЯ СОРТИРОВКИ (вычисляется при каждом рендере)
 
 
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>Менеджер задач</h1>
-
       <TaskForm onAddTask={addTask} />
 
-      {/* Панель управления сортировкой */}
-      <div className={styles.controls}>
-        <label htmlFor="sort-select" className={styles.label}>
-          Сортировка: </label>
+      {/* Выпадающий список для выбора сортировки */}
+      <div className={styles.sortWrapper}>
+        <label htmlFor="sort-select" className={styles.label}>Сортировка: </label>
         <select
           id="sort-select"
           className={styles.select}
         >
           <option>По порядку добавления</option>
-          <option>По алфавиту (А–Я)</option>
+          <option>Сначала новые</option>
+          <option>По алфавиту (А-Я)</option>
         </select>
       </div>
 
-      {/* Передаем уже отсортированный массив вместо исходного tasks */}
+      {/* Передаем ОРТСОЛТИРОВАННЫЙ массив вместо исходного */}
       <TaskList
         tasks={tasks}
         onUpdateTask={updateTask}
         onDeleteTask={deleteTask}
       />
 
-      <p className={styles.counter}>Всего задач создано: {tasks.length}</p>
+      <p className={styles.counter}>Всего задач: {tasks.length}</p>
     </div>
   );
 }

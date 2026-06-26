@@ -1,9 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import styles from './taskItem.module.css'
 
 export const TaskItem = ({ task, onUpdateTask, onDeleteTask }) => {
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(task.title)
+
+  useEffect(() => {
+    setEditValue(task.title)
+  }, [task.title])
 
   const handleEdit = () => {
     setIsEditing(true)
