@@ -79,11 +79,6 @@ export default function App() {
       return tasksCopy.sort((a, b) => b.id - a.id);
     }
 
-    if (filterType === 'alphabetical') {
-      // По алфавиту (регистронезависимо)
-      return tasksCopy.sort((a, b) => a.title.localeCompare(b.title));
-    }
-
     // 'default' — по порядку добавления (от старых к новым)
     return tasksCopy;
   };
@@ -107,7 +102,6 @@ export default function App() {
         >
           <option value="default">По порядку добавления</option>
           <option value="newest">Сначала новые</option>
-          <option value="alphabetical">По алфавиту (А-Я)</option>
         </select>
       </div>
 
