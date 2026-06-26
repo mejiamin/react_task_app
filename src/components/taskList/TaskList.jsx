@@ -1,9 +1,9 @@
 import { TaskItem } from '@/components'
 import styles from './taskList.module.css'
 
-export const TaskList = ({ tasks }) => {
+export const TaskList = ({ tasks, onUpdateTask, onDeleteTask }) => {
   if (tasks.length === 0) {
-    return <p>Список задач пуст. Добавьте что-нибудь!</p>
+    return <p className={styles.empty}>Список задач пуст. Добавьте что-нибудь!</p>
   }
 
   return (
@@ -12,6 +12,8 @@ export const TaskList = ({ tasks }) => {
         <TaskItem
           key={task.id}
           task={task}
+          onUpdateTask={onUpdateTask}
+          onDeleteTask={onDeleteTask}
         />
       ))}
     </ul>
