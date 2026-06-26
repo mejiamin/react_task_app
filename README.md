@@ -13,28 +13,124 @@
 - Урок 3: Редактирование задач
 - Урок 4: Сохранение и отмена изменений при редактировании
 - Урок 5: Удаление задач при редактировании
-- **Урок 6: Сортировка задач через выпадающее меню**
-- Урок 7: Переключение между светлой и тёмной темой
+- Урок 6: Сортировка задач через выпадающее меню
+- **Урок 7: Переключение между светлой и тёмной темой**
 
 ---
 
-## Урок 6: Сортировка задач через выпадающее меню
+## Урок 7: Переключение между светлой и тёмной темой
 
-В этом уроке мы добавим возможность сортировать задачи. Мы сделаем выпадающий список (`<select>`), который позволит пользователю выбирать один из трех режимов:
+Чтобы реализовать эту фичу правильно, мы не будем прокидывать классы «тёмной темы» в каждый отдельный компонент вручную. Вместо этого мы используем силу **CSS-переменных (Custom Properties)** на уровне корневого контейнера и обычный стейт в React.
 
-1. **По порядку добавления** (сначала старые).
-2. **От новых к старым** (сначала свежие).
-3. **По алфавиту** (А–Я).
+### Шаг 1: Подготовка CSS-переменных в `App.module.css`
 
-При этом важно помнить **правило React**: мы не должны навсегда перезаписывать исходный массив `tasks` в стейте при сортировке. Вместо этого мы будем вычислять отсортированный массив «на лету» прямо во время рендеринга.
+Мы определим два глобальных набора цветов: для светлой темы (по умолчанию) и для тёмной темы (внутри специального класса `.dark`).
+
+Открой `src/App.module.css` и полностью перепиши его содержимое:
+
+```css
+/* Светлая тема (значения по умолчанию) */
+.container {
+  --bg-app: #f9f9f9;
+  --bg-card: #ffffff;
+  --text-main: #333333;
+  --text-muted: #666666;
+  --border-color: #eee;
+  --input-border: #ccc;
+
+  max-width: 600px;
+  margin: 50px auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s, color 0.3s;
+  
+  /* Применяем переменные */
+  background-color: var(--bg-app);
+  color: var(--text-main);
+}
+
+/* Тёмная тема (перезаписываем переменные) */
+.dark {
+  --bg-app: #1e1e24;
+  --bg-card: #2a2a32;
+  --text-main: #f5f5f5;
+  --text-muted: #aaaaaa;
+  --border-color: #3a3a45;
+  --input-border: #444452;
+}
+
+/* Стили заголовка и счетчика теперь зависят от переменных */
+.title {
+  text-align: center;
+  color: var(--text-main);
+  margin-bottom: 30px;
+}
+
+.counter {
+  font-size: 14px;
+  color: var(--text-muted);
+  text-align: right;
+  margin-top: 15px;
+}
+
+.sortWrapper {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 15px;
+  gap: 8px;
+}
+
+.label {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.select {
+  padding: 6px 10px;
+  font-size: 14px;
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+/* Стили для верхней панели с кнопкой темы */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.themeButton {
+  padding: 8px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid var(--input-border);
+  border-radius: 20px;
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  transition: all 0.2s ease;
+}
+
+.themeButton:hover {
+  filter: brightness(0.9);
+}
+```
 
 ---
 
-### Шаг 1: Создаем состояние для типа сортировки в `App.jsx`
+### Шаг 2: Внедряем стейт темы в `App.jsx`
 
-Нам понадобится новый стейт `filterType`, который будет хранить строку-идентификатор выбранного режима.
+Теперь нам нужно завести булев стейт `isDarkMode`. Если он равен `true`, мы будем динамически добавлять класс `.dark` к нашему контейнеру. Для объединения классов воспользуемся обычной шаблонной строкой.
 
-Открой `src/App.jsx` и добавь новое состояние, а также логику сортировки перед тем, как передать массив в компонент списка:
+Обнови код в `src/App.jsx`:
 
 ```jsx
 import { useState } from 'react';
@@ -44,8 +140,9 @@ import styles from './App.module.css';
 
 export default function App() {
   const [tasks, setTasks] = useState([]);
-  // Состояние для хранения выбранного типа сортировки
   const [filterType, setFilterType] = useState('default');
+  // Новое состояние для темы
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   const addTask = (title) => {
     const newTask = {
@@ -68,34 +165,38 @@ export default function App() {
     setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
   };
 
-  // ФУНКЦИЯ СОРТИРОВКИ (вычисляется при каждом рендере)
   const getSortedTasks = () => {
-    // Создаем копию массива, чтобы не мутировать исходный стейт tasks
     const tasksCopy = [...tasks];
-
     if (filterType === 'newest') {
-      // Сначала новые: сравниваем id 
-      // (так как id — это timestamp времени создания)
       return tasksCopy.sort((a, b) => b.id - a.id);
     }
-
     if (filterType === 'alphabetical') {
-      // По алфавиту (регистронезависимо)
       return tasksCopy.sort((a, b) => a.title.localeCompare(b.title));
     }
 
-    // 'default' — по порядку добавления (от старых к новым)
     return tasksCopy;
   };
 
-  const sortedTasks = getSortedTasks();
+  // Динамически формируем имя класса контейнера
+  const containerClass = isDarkMode 
+    ? `${styles.container} ${styles.dark}` 
+    : styles.container;
 
   return (
-    <div className={styles.container}>
-      <h1 className={styles.title}>Менеджер задач</h1>
+    <div className={containerClass}>
+      <header className={styles.header}>
+        <h1 className={styles.title}>Менеджер задач</h1>
+        {/* Кнопка переключения темы */}
+        <button 
+          className={styles.themeButton} 
+          onClick={() => setIsDarkMode(!isDarkMode)}
+        >
+          {isDarkMode ? '☀️ Светлая' : '🌙 Тёмная'}
+        </button>
+      </header>
+
       <TaskForm onAddTask={addTask} />
       
-      {/* Выпадающий список для выбора сортировки */}
       <div className={styles.sortWrapper}>
         <label htmlFor="sort-select" className={styles.label}>
           Сортировка: </label>
@@ -111,9 +212,8 @@ export default function App() {
         </select>
       </div>
 
-      {/* Передаем ОРТСОЛТИРОВАННЫЙ массив вместо исходного */}
       <TaskList 
-        tasks={sortedTasks} 
+        tasks={getSortedTasks()} 
         onUpdateTask={updateTask} 
         onDeleteTask={deleteTask} 
       />
@@ -126,40 +226,38 @@ export default function App() {
 
 ---
 
-### Шаг 2: Стилизуем блок сортировки
+### Шаг 3: Переводим карточки задач на CSS-переменные
 
-Чтобы выпадающий список смотрелся гармонично между формой ввода и самим списком задач, добавим немного CSS.
+Чтобы карточки внутри списка тоже меняли цвет при смене темы, откроем файл `src/components/TaskItem/TaskItem.module.css` и заменим фиксированные цвета (`#fff`, `#333`, `#eee`) на наши переменные, которые автоматически наследуются от главного контейнера.
 
-Допиши в файл `src/App.module.css` следующие стили:
+Обнови верхнюю часть файла `src/components/TaskItem/TaskItem.module.css`:
 
 ```css
-.sortWrapper {
+.item {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
-  gap: 8px;
+  padding: 12px 15px;
+  /* Заменяем на CSS-переменные родителя */
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  
+  border-radius: 6px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  transition: background-color 0.3s, border-color 0.3s, color 0.3s;
 }
 
-.label {
-  font-size: 14px;
-  color: #555;
+.text {
+  font-size: 16px;
+  /* Цвет текста тоже берем из переменной */
+  color: var(--text-main);
+  flex: 1;
+  margin-right: 10px;
 }
 
-.select {
-  padding: 6px 10px;
-  font-size: 14px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background-color: #fff;
-  outline: none;
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-
-.select:focus {
-  border-color: #007bff;
-}
+/* Оставшиеся стили (кнопки, инпуты) можно не менять, они уже настроены */
 ```
 
 ---
@@ -182,17 +280,8 @@ npm run dev
 
 ---
 
-### 🎯 Домашнее задание к Уроку 6:
+### 🎯 Домашнее задание к Уроку 7:
 
-1. Добавь 3 разные задачи вразброс, например:
-* *Борщ*
-* *Яблоки*
-* *Арбуз*
-
-
-2. По умолчанию они должны отображаться так, как ты их вводил.
-3. Переключи выпадающий список на **«По алфавиту (А-Я)»**. Убедись, что задачи мгновенно перестроились: *Арбуз, Борщ, Яблоки*.
-4. Переключи на **«Сначала новые»**. Теперь последняя добавленная задача (*Арбуз*) должна оказаться на самом верху списка.
-5. Попробуй удалить или отредактировать задачу, пока включен любой из режимов фильтрации — всё должно работать стабильно.
-
-**Мы перейдем к финальному Уроку 7: добавим переключение темной и светлой темы через CSS-переменные!**
+1. Зайди в приложение. В правом верхнем углу должна появиться аккуратная кнопка **«🌙 Тёмная»**.
+2. Нажми на неё. Контейнер приложения и карточки задач должны плавно сменить цвет на тёмные оттенки, а текст — стать белым. Кнопка при этом изменит надпись на **«☀️ Светлая»**.
+3. Попробуй добавлять, сортировать и удалять задачи в тёмном режиме — всё должно выглядеть гармонично и читаемо.

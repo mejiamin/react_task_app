@@ -4,7 +4,8 @@ import { useState } from "react";
 
 export const App = () => {
   const [tasks, setTasks] = useState([]);
-  // Состояние для хранения выбранного типа сортировки
+  const [filterType, setFilterType] = useState('default');
+  // Новое состояние для темы
   
 
   const addTask = (title) => {
@@ -28,30 +29,47 @@ export const App = () => {
     setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
   };
 
-  // ФУНКЦИЯ СОРТИРОВКИ (вычисляется при каждом рендере)
+  const getSortedTasks = () => {
+    const tasksCopy = [...tasks];
+    if (filterType === 'newest') return tasksCopy.sort((a, b) => b.id - a.id);
+    if (filterType === 'alphabetical') return tasksCopy.sort((a, b) => a.title.localeCompare(b.title));
+    return tasksCopy;
+  };
 
+  // Динамически формируем имя класса контейнера
+  
 
   return (
-    <div className={styles.container}>
-      <h1 className={styles.title}>Менеджер задач</h1>
+    <div className={containerClass}>
+      <header className={styles.header}>
+        <h1 className={styles.title}>Менеджер задач</h1>
+
+        {/* Кнопка переключения темы */}
+        <button
+          className={styles.themeButton}
+        >
+          {true ? '☀️ Светлая' : '🌙 Тёмная'}
+        </button>
+      </header>
+
       <TaskForm onAddTask={addTask} />
 
-      {/* Выпадающий список для выбора сортировки */}
       <div className={styles.sortWrapper}>
         <label htmlFor="sort-select" className={styles.label}>Сортировка: </label>
         <select
           id="sort-select"
           className={styles.select}
+          value={filterType}
+          onChange={(e) => setFilterType(e.target.value)}
         >
-          <option>По порядку добавления</option>
-          <option>Сначала новые</option>
-          <option>По алфавиту (А-Я)</option>
+          <option value="default">По порядку добавления</option>
+          <option value="newest">Сначала новые</option>
+          <option value="alphabetical">По алфавиту (А-Я)</option>
         </select>
       </div>
 
-      {/* Передаем ОРТСОЛТИРОВАННЫЙ массив вместо исходного */}
       <TaskList
-        tasks={tasks}
+        tasks={getSortedTasks()}
         onUpdateTask={updateTask}
         onDeleteTask={deleteTask}
       />

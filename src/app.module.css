@@ -1,23 +1,47 @@
+/* Светлая тема (значения по умолчанию) */
 .container {
+  --bg-app: #f9f9f9;
+  --bg-card: #ffffff;
+  --text-main: #333333;
+  --text-muted: #666666;
+  --border-color: #eee;
+  --input-border: #ccc;
+
   max-width: 600px;
   margin: 50px auto;
   padding: 20px;
   font-family: Arial, sans-serif;
-  background-color: #f9f9f9;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s, color 0.3s;
+
+  /* Применяем переменные */
+  background-color: var(--bg-app);
+  color: var(--text-main);
 }
 
+/* Тёмная тема (перезаписываем переменные) */
+.dark {
+  --bg-app: #1e1e24;
+  --bg-card: #2a2a32;
+  --text-main: #f5f5f5;
+  --text-muted: #aaaaaa;
+  --border-color: #3a3a45;
+  --input-border: #444452;
+}
+
+/* Стили заголовка и счетчика теперь зависят от переменных */
 .title {
   text-align: center;
-  color: #333;
+  color: var(--text-main);
   margin-bottom: 30px;
 }
 
 .counter {
   font-size: 14px;
-  color: #666;
+  color: var(--text-muted);
   text-align: right;
+  margin-top: 15px;
 }
 
 .sortWrapper {
@@ -30,15 +54,16 @@
 
 .label {
   font-size: 14px;
-  color: #555;
+  color: var(--text-muted);
 }
 
 .select {
   padding: 6px 10px;
   font-size: 14px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--input-border);
   border-radius: 4px;
-  background-color: #fff;
+  background-color: var(--bg-card);
+  color: var(--text-main);
   outline: none;
   cursor: pointer;
   transition: border-color 0.2s;
@@ -46,4 +71,27 @@
 
 .select:focus {
   border-color: #007bff;
+}
+
+/* Стили для верхней панели с кнопкой темы */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.themeButton {
+  padding: 8px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid var(--input-border);
+  border-radius: 20px;
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  transition: all 0.2s ease;
+}
+
+.themeButton:hover {
+  filter: brightness(0.9);
 }
