@@ -3,16 +3,19 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px 15px;
-  background-color: #fff;
-  border: 1px solid #eee;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+
   border-radius: 6px;
   margin-bottom: 10px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  transition: background-color 0.3s, border-color 0.3s, color 0.3s;
 }
 
 .text {
   font-size: 16px;
-  color: #333;
+  color: var(--text-main);
   flex: 1;
   margin-right: 10px;
 }
